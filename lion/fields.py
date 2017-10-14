@@ -35,7 +35,7 @@ def IntField(name, getter=getattr, skip_null=True):
     def f(obj, d, fields):
         if name in fields:
             v = getter(obj, name)
-            if v is None:
+            if v is not None:
                 d[name] = int(v)
             elif not skip_null:
                 d[name] = None
