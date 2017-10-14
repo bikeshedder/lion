@@ -1,77 +1,125 @@
-def RawField(name, skip_empty=False):
-    if skip_empty:
-        def f(obj, d, fields):
-            if name in fields:
-                v = getattr(obj, name)
-                if v or not skip_empty:
-                    d[name] = v
-    else:
-        def f(obj, d, fields):
-            if name in fields:
-                v = getattr(obj, name)
-                d[name] = v
-    f.name = name
-    return f
+from copy import deepcopy
 
-def StrField(name, getter=getattr, skip_empty=False):
-    if skip_empty:
-        def f(obj, d, fields):
-            if name in fields:
-                v = getter(obj, name)
-                if v:
-                    d[name] = str(v)
-    else:
-        def f(obj, d, fields):
-            if name in fields:
-                v = getter(obj, name)
-                d[name] = str(v)
-    f.name = name
-    return f
+from .predicates import everything as predicate_everything
 
-# XXX
-UUIDField = StrField
 
-def IntField(name, getter=getattr, skip_null=True):
-    def f(obj, d, fields):
-        if name in fields:
-            v = getter(obj, name)
-            if v is not None:
-                d[name] = int(v)
-            elif not skip_null:
-                d[name] = None
-    f.name = name
-    return f
+class Field(object):
 
-def ConstField(name, value):
-    def f(obj, d, fields):
-        if name in fields:
-            d[name] = value
-    f.name = name
-    return f
+    def __init__(self, source=None, getter=None, predicate=predicate_everything):
+        self.name = None
+        self.source = source
+        if getter:
+            self.getter = getter
+        self.predicate = predicate
 
-def DateTimeField(name, getter=getattr, skip_null=False):
-    if skip_null:
-        def f(obj, d, fields):
-            if name in fields:
-                v = getter(obj, name)
-                if v is not None:
-                    d[name] = v.isoformat()
-    else:
-        def f(obj, d, fields):
-            if name in fields:
-                v = getter(obj, name)
-                d[name] = v.isoformat() if v is not None else None
-    f.name = name
-    return f
+    def bind(self, fields):
+        # Most fields don't need anything special when being bound so
+        # they simply return theirselves.
+        return self
 
-def ListField(name, mapper, getter=getattr, skip_empty=False):
-    def f(obj, d, fields):
-        if name in fields:
-            v = getter(obj, name)
-            l = [
-                mapper(x, fields=fields[name]) for x in v
-            ]
-            if l or not skip_empty:
-                d[name] = l
-    f.name = name
-    return f
+    def getter(self, obj, name):
+        if name is None:
+            print(self)
+        return getattr(obj, name)
+
+    def denormalize(self, obj, target):
+        value = self.getter(obj, self.source)
+        if self.predicate(value):
+            value = self.denormalize_value(value)
+            target[self.name] = value
+        return value
+
+    def contribute_to_mapper(self, mapper, name):
+        clone = deepcopy(self)
+        clone.name = name
+        clone.source = clone.source or name
+        mapper.fields.append(clone)
+
+
+class StrField(Field):
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        return str(value)
+
+
+class UUIDField(StrField):
+    pass
+
+class IntField(Field):
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        return int(value)
+
+
+class ConstField(Field):
+
+    def __init__(self, value):
+        super().__init__(getter=lambda obj, name: value)
+
+
+class DateTimeField(Field):
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        return value.isoformat()
+
+
+class BoundListField(Field):
+
+    def __init__(self, mapper, **kwargs):
+        super().__init__(**kwargs)
+        self.mapper = mapper
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        mapper = self.mapper
+        return [
+            mapper.denormalize(x)
+            for x in value
+        ]
+
+
+class ListField(Field):
+
+    def __init__(self, mapper, **kwargs):
+        super().__init__(**kwargs)
+        self.mapper_class = mapper
+        self.kwargs = kwargs
+
+    def bind(self, fields):
+        bound_field = BoundListField(self.mapper_class(fields), **self.kwargs)
+        bound_field.name = self.name
+        bound_field.source = self.source
+        return bound_field
+
+
+class BoundMapperField(Field):
+
+    def __init__(self, mapper, **kwargs):
+        super().__init__(**kwargs)
+        self.mapper = mapper
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        return self.mapper.denormalize(value)
+
+
+class MapperField(Field):
+
+    def __init__(self, mapper, **kwargs):
+        super().__init__(**kwargs)
+        self.mapper_class = mapper
+        self.kwargs = kwargs
+
+    def bind(self, fields):
+        bound_field = BoundMapperField(self.mapper_class(fields), **self.kwargs)
+        bound_field.name = self.name
+        bound_field.source = self.source
+        return bound_field

@@ -2,22 +2,20 @@ from uuid import UUID
 
 import lion
 
-class Logo:
 
+class Logo:
     def __init__(self, url, width, height):
         self.url = url
         self.width = width
         self.height = height
 
 class Project:
-
     def __init__(self, id, title, logo):
         self.id = id
         self.title = title
         self.logo = logo
 
 class Company:
-
     def __init__(self, id, title, logo, projects=None):
         self.id = id
         self.title = title
@@ -25,28 +23,23 @@ class Company:
         self.projects = projects or []
 
 
-logo_mapper = lion.Mapper(
-    lion.StrField('url'),
-    lion.IntField('width'),
-    lion.IntField('height'),
-)
+class LogoMapper(lion.Mapper):
+    url = lion.StrField()
+    width = lion.IntField()
+    height = lion.IntField()
 
-company_mapper = lion.Mapper(
-    lion.UUIDField('id'),
-    lion.StrField('title'),
-    logo_mapper.as_field('logo', skip_cond=lambda obj: not obj.logo),
-)
+class CompanyMapper(lion.Mapper):
+    id = lion.UUIDField()
+    title = lion.StrField()
+    logo = lion.MapperField(LogoMapper, predicate=bool)
 
-project_mapper = lion.Mapper(
-    lion.UUIDField('id'),
-    lion.StrField('title'),
-    logo_mapper.as_field('logo', skip_cond=lambda obj: not obj.logo),
-)
+class ProjectMapper(lion.Mapper):
+    id = lion.UUIDField()
+    title = lion.StrField()
+    logo = lion.MapperField(LogoMapper, predicate=bool)
 
-company_with_projects_mapper = lion.Mapper(
-    company_mapper,
-    lion.ListField('projects', mapper=project_mapper)
-)
+class CompanyWithProjectsMapper(CompanyMapper, lion.Mapper):
+    projects = lion.ListField(ProjectMapper)
 
 
 company = Company(
@@ -73,14 +66,14 @@ company = Company(
 
 
 def test_logo():
-    assert logo_mapper(company.logo) == {
+    assert LogoMapper().denormalize(company.logo) == {
         'url': 'http://terreon.de/favicon.ico',
         'width': 16,
         'height': 16
     }
 
 def test_company():
-    assert company_mapper(company) == {
+    assert CompanyMapper().denormalize(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -91,7 +84,7 @@ def test_company():
     }
 
 def test_company_with_projects():
-    assert company_with_projects_mapper(company) == {
+    assert CompanyWithProjectsMapper().denormalize(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -117,15 +110,15 @@ def test_company_with_projects():
     }
 
 def test_fields():
-    fields = lion.FieldList.parse('{id,title}')
-    assert company_with_projects_mapper(company, fields=fields) == {
+    fields = '{id,title}'
+    assert CompanyWithProjectsMapper(fields=fields).denormalize(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
     }
 
 def test_fields_nested():
-    fields = lion.FieldList.parse('{id,title,logo{url}}')
-    assert company_with_projects_mapper(company, fields=fields) == {
+    fields = '{id,title,logo{url}}'
+    assert CompanyWithProjectsMapper(fields=fields).denormalize(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -134,8 +127,8 @@ def test_fields_nested():
     }
 
 def test_fields_nested_list():
-    fields = lion.FieldList.parse('{id,title,projects{id, title}}')
-    assert company_with_projects_mapper(company, fields=fields) == {
+    fields = '{id,title,projects{id, title}}'
+    assert CompanyWithProjectsMapper(fields=fields).denormalize(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'projects': [

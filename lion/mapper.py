@@ -1,4 +1,7 @@
-from .ql import parse, every_dict
+import collections
+
+from . import ql
+from .fields import MapperField
 
 class FieldList(object):
 
@@ -7,33 +10,40 @@ class FieldList(object):
         return parse(fields)
 
 
-class Mapper(object):
+class MapperMetaclass(type):
 
-    def __init__(self, *fields):
-        self.fields = []
-        for field in fields:
-            if callable(field):
-                self.fields.append(field)
-            else:
-                self.fields.append(raw_field(field))
+    @classmethod
+    def __prepare__(metacls, name, bases, **kwds):
+        return collections.OrderedDict()
 
-    def __call__(self, obj, d=None, fields=every_dict):
-        if d is None:
-            d = {}
+    def __new__(cls, name, bases, namespace, **kwds):
+        result = type.__new__(cls, name, bases, dict(namespace))
+        result.fields = []
+        # Copy fields from bases
+        for base in bases:
+            if hasattr(base, 'fields'):
+                for field in base.fields:
+                    field.contribute_to_mapper(result, field.name)
+        for field_name, field in namespace.items():
+            if hasattr(field, 'contribute_to_mapper'):
+                field.contribute_to_mapper(result, field_name)
+        return result
+
+
+class Mapper(object, metaclass=MapperMetaclass):
+
+    def __init__(self, fields=ql.every_dict):
+        if isinstance(fields, str):
+            fields = ql.parse(fields)
+        self.fields = [
+            field.bind(fields[field.name])
+            for field in self.fields
+            if field.name in fields
+        ]
+
+    def denormalize(self, obj, target=None):
+        if target is None:
+            target = {}
         for field in self.fields:
-            field(obj, d, fields)
-        return d
-
-    def as_field(self, name, getter=getattr, skip_cond=None):
-        if skip_cond:
-            def f(obj, d, fields):
-                if name in fields and not skip_cond(obj):
-                    v = getter(obj, name)
-                    d[name] = self(v, fields=fields[name])
-        else:
-            def f(obj, d, fields):
-                if name in fields:
-                    v = getter(obj, name)
-                    d[name] = self(v, fields=fields[name])
-        f.name = name
-        return f
+            field.denormalize(obj, target)
+        return target
