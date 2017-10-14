@@ -31,12 +31,12 @@ class LogoMapper(lion.Mapper):
 class CompanyMapper(lion.Mapper):
     id = lion.UUIDField()
     title = lion.StrField()
-    logo = lion.MapperField(LogoMapper, predicate=bool)
+    logo = lion.MapperField(LogoMapper, predicate=lion.skip_none)
 
 class ProjectMapper(lion.Mapper):
     id = lion.UUIDField()
     title = lion.StrField()
-    logo = lion.MapperField(LogoMapper, predicate=bool)
+    logo = lion.MapperField(LogoMapper, predicate=lion.skip_none)
 
 class CompanyWithProjectsMapper(CompanyMapper, lion.Mapper):
     projects = lion.ListField(ProjectMapper)
