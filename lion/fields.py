@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import copy
 
 from .predicates import everything as predicate_everything
 
@@ -30,7 +30,7 @@ class Field(object):
         return value
 
     def contribute_to_mapper(self, mapper, name):
-        clone = deepcopy(self)
+        clone = copy(self)
         clone.name = name
         clone.source = clone.source or name
         mapper.fields.append(clone)
