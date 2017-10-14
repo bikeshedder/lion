@@ -142,3 +142,7 @@ def test_fields_nested_list():
             }
         ]
     }
+
+
+def test_performance(benchmark):
+    benchmark(test_fields_nested_list)
