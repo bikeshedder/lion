@@ -28,4 +28,6 @@ def to_dict(d):
     }
 
 def parse(s):
+    if not s:
+        return every_dict
     return to_dict(ql.parseString(s))
