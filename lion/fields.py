@@ -1,16 +1,16 @@
-from copy import copy
+from copy import copy, deepcopy
 
-from .predicates import everything as predicate_everything
+from .conditions import no_condition
 
 
 class Field(object):
 
-    def __init__(self, source=None, getter=None, predicate=predicate_everything):
+    def __init__(self, source=None, getter=None, condition=no_condition):
         self.name = None
         self.source = source
         if getter:
             self.getter = getter
-        self.predicate = predicate
+        self.condition = condition
 
     def bind(self, fields):
         # Most fields don't need anything special when being bound so
@@ -22,15 +22,18 @@ class Field(object):
             print(self)
         return getattr(obj, name)
 
-    def denormalize(self, obj, target):
+    def dump(self, obj, target):
         value = self.getter(obj, self.source)
-        if self.predicate(value):
+        if self.condition(value):
             value = self.denormalize_value(value)
             target[self.name] = value
         return value
 
+    def denormalize_value(self, value):
+        return value
+
     def contribute_to_mapper(self, mapper, name):
-        clone = copy(self)
+        clone = deepcopy(self)
         clone.name = name
         clone.source = clone.source or name
         mapper.fields.append(clone)
@@ -69,46 +72,27 @@ class DateTimeField(Field):
         return value.isoformat()
 
 
-class BoundListField(Field):
+class ListField(Field):
 
     def __init__(self, mapper, **kwargs):
         super().__init__(**kwargs)
-        self.mapper = mapper
+        self.mapper_class = mapper
+        self.mapper = None
+        self.kwargs = kwargs
+
+    def bind(self, fields):
+        clone = copy(self)
+        clone.mapper = clone.mapper_class(fields)
+        return clone
 
     def denormalize_value(self, value):
         if value is None:
             return None
         mapper = self.mapper
         return [
-            mapper.denormalize(x)
+            mapper.dump(x)
             for x in value
         ]
-
-
-class ListField(Field):
-
-    def __init__(self, mapper, **kwargs):
-        super().__init__(**kwargs)
-        self.mapper_class = mapper
-        self.kwargs = kwargs
-
-    def bind(self, fields):
-        bound_field = BoundListField(self.mapper_class(fields), **self.kwargs)
-        bound_field.name = self.name
-        bound_field.source = self.source
-        return bound_field
-
-
-class BoundMapperField(Field):
-
-    def __init__(self, mapper, **kwargs):
-        super().__init__(**kwargs)
-        self.mapper = mapper
-
-    def denormalize_value(self, value):
-        if value is None:
-            return None
-        return self.mapper.denormalize(value)
 
 
 class MapperField(Field):
@@ -116,10 +100,14 @@ class MapperField(Field):
     def __init__(self, mapper, **kwargs):
         super().__init__(**kwargs)
         self.mapper_class = mapper
-        self.kwargs = kwargs
+        self.mapper = None
 
     def bind(self, fields):
-        bound_field = BoundMapperField(self.mapper_class(fields), **self.kwargs)
-        bound_field.name = self.name
-        bound_field.source = self.source
-        return bound_field
+        clone = copy(self)
+        clone.mapper = clone.mapper_class(fields)
+        return clone
+
+    def denormalize_value(self, value):
+         if value is None:
+             return None
+         return self.mapper.dump(value)

@@ -1,13 +1,6 @@
 import collections
 
 from . import ql
-from .fields import MapperField
-
-class FieldList(object):
-
-    @classmethod
-    def parse(cls, fields=None):
-        return parse(fields)
 
 
 class MapperMetaclass(type):
@@ -41,9 +34,9 @@ class Mapper(object, metaclass=MapperMetaclass):
             if field.name in fields
         ]
 
-    def denormalize(self, obj, target=None):
+    def dump(self, obj, target=None):
         if target is None:
             target = {}
         for field in self.fields:
-            field.denormalize(obj, target)
+            field.dump(obj, target)
         return target

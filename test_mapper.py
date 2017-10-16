@@ -31,12 +31,12 @@ class LogoMapper(lion.Mapper):
 class CompanyMapper(lion.Mapper):
     id = lion.UUIDField()
     title = lion.StrField()
-    logo = lion.MapperField(LogoMapper, predicate=lion.skip_none)
+    logo = lion.MapperField(LogoMapper, condition=lion.skip_none)
 
 class ProjectMapper(lion.Mapper):
     id = lion.UUIDField()
     title = lion.StrField()
-    logo = lion.MapperField(LogoMapper, predicate=lion.skip_none)
+    logo = lion.MapperField(LogoMapper, condition=lion.skip_none)
 
 class CompanyWithProjectsMapper(CompanyMapper, lion.Mapper):
     projects = lion.ListField(ProjectMapper)
@@ -66,14 +66,14 @@ company = Company(
 
 
 def test_logo():
-    assert LogoMapper().denormalize(company.logo) == {
+    assert LogoMapper().dump(company.logo) == {
         'url': 'http://terreon.de/favicon.ico',
         'width': 16,
         'height': 16
     }
 
 def test_company():
-    assert CompanyMapper().denormalize(company) == {
+    assert CompanyMapper().dump(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -84,7 +84,7 @@ def test_company():
     }
 
 def test_company_with_projects():
-    assert CompanyWithProjectsMapper().denormalize(company) == {
+    assert CompanyWithProjectsMapper().dump(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -111,14 +111,14 @@ def test_company_with_projects():
 
 def test_fields():
     fields = '{id,title}'
-    assert CompanyWithProjectsMapper(fields=fields).denormalize(company) == {
+    assert CompanyWithProjectsMapper(fields=fields).dump(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
     }
 
 def test_fields_nested():
     fields = '{id,title,logo{url}}'
-    assert CompanyWithProjectsMapper(fields=fields).denormalize(company) == {
+    assert CompanyWithProjectsMapper(fields=fields).dump(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -128,7 +128,7 @@ def test_fields_nested():
 
 def test_fields_nested_list():
     fields = '{id,title,projects{id, title}}'
-    assert CompanyWithProjectsMapper(fields=fields).denormalize(company) == {
+    assert CompanyWithProjectsMapper(fields=fields).dump(company) == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'projects': [
