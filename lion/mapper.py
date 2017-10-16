@@ -40,3 +40,11 @@ class Mapper(object, metaclass=MapperMetaclass):
         for field in self.fields:
             field.dump(obj, target)
         return target
+
+    def drf(self):
+        '''
+        Return a mapper that is compatible to the Django REST Framework
+        serializer API.
+        '''
+        from lion.contrib.drf import DRFMapper
+        return DRFMapper.wrap(self)
