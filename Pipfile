@@ -5,8 +5,9 @@ name = "pypi"
 
 [packages]
 pyparsing = "*"
+pytz = "*"
 
 [requires]
-python_version = "3.5"
+python_version = "3.6"
 
 [dev-packages]
