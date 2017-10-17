@@ -70,14 +70,17 @@ class ComplexS(serpy.Serializer):
 
 class SubL(lion.Mapper):
     w = lion.IntField()
-    x = lion.Field(getter=lambda obj, name: obj.x + 10)
+    x = lion.MapperMethodField()
     y = lion.StrField()
     z = lion.IntField()
+
+    def get_x(self, obj):
+        return obj.x + 10
 
 
 class ComplexL(lion.Mapper):
     foo = lion.StrField()
-    bar = lion.Field(getter=lambda obj, name: obj.bar())
+    bar = lion.Field(getter=lion.getters.call_method)
     sub = lion.MapperField(SubL)
     subs = lion.ListField(SubL)
 
