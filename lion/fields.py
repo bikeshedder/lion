@@ -86,9 +86,18 @@ class UUIDField(StrField):
 
 class DateTimeField(Field):
 
+    def __init__(self, source=None, getter=None, condition=no_condition, tz=None):
+        super().__init__(source, getter, condition)
+        self.tz = tz
+
     def denormalize_value(self, value):
         if value is None:
             return None
+        if self.tz is not None:
+            if value.tzinfo is not None:
+                value = value.astimezone(self.tz)
+            else:
+                value = self.tz.localize(value)
         return value.isoformat()
 
 
