@@ -53,6 +53,27 @@ def test_int_field():
     }
 
 
+def test_float_field():
+    class MyMapper(lion.Mapper):
+        v = lion.FloatField()
+        v_skip_none = lion.FloatField(condition=lion.skip_none)
+        v_skip_false = lion.FloatField(condition=lion.skip_false)
+        v_skip_negative = lion.FloatField(condition=lambda v: v is not None and v >= 0)
+        v_intify = lion.FloatField()
+    data = {
+        'v': 4.2,
+        'v_skip_none': None,
+        'v_skip_false': 0.0,
+        'v_skip_negative': -4.2,
+        'v_intify': '4.2',
+    }
+    obj = objectify(data)
+    assert MyMapper().dump(obj) == {
+        'v': 4.2,
+        'v_intify': 4.2,
+    }
+
+
 def test_str_field():
     class MyMapper(lion.Mapper):
         s = lion.StrField()

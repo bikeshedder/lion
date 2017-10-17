@@ -58,6 +58,14 @@ class IntField(Field):
         return int(value)
 
 
+class FloatField(Field):
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        return float(value)
+
+
 class StrField(Field):
 
     def denormalize_value(self, value):
