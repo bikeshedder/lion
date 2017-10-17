@@ -1,3 +1,5 @@
+.. sourcecode :: python
+
 Lion is a very flexible yet fast library for mapping objects to
 dictionaries. It uses a declarative API and supports a query language
 similar to GraphQL. Unlike other serialization libraries it also
