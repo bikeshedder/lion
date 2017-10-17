@@ -28,8 +28,9 @@ class Mapper(object, metaclass=MapperMetaclass):
     def __init__(self, fields=ql.every_dict):
         if isinstance(fields, str):
             fields = ql.parse(fields)
+        self.include_fields = fields
         self.fields = [
-            field.bind(fields[field.name])
+            field.bind(self)
             for field in self.fields
             if field.name in fields
         ]

@@ -3,7 +3,18 @@ from copy import copy, deepcopy
 from .conditions import no_condition
 
 
-class Field(object):
+class BaseField(object):
+
+    def dump(self, obj, target):
+        raise NotImplemented("Subclasses of BaseField need to implement this method.")
+
+    def bind(self, mapper):
+        # Most fields don't need anything special when being bound so
+        # they simply return theirselves.
+        return self
+
+
+class Field(BaseField):
 
     def __init__(self, source=None, getter=None, condition=no_condition):
         self.name = None
@@ -12,14 +23,7 @@ class Field(object):
             self.getter = getter
         self.condition = condition
 
-    def bind(self, fields):
-        # Most fields don't need anything special when being bound so
-        # they simply return theirselves.
-        return self
-
     def getter(self, obj, name):
-        if name is None:
-            print(self)
         return getattr(obj, name)
 
     def dump(self, obj, target):
@@ -27,7 +31,6 @@ class Field(object):
         if self.condition(value):
             value = self.denormalize_value(value)
             target[self.name] = value
-        return value
 
     def denormalize_value(self, value):
         return value
@@ -39,16 +42,13 @@ class Field(object):
         mapper.fields.append(clone)
 
 
-class StrField(Field):
+class BoolField(Field):
 
     def denormalize_value(self, value):
         if value is None:
             return None
-        return str(value)
+        return bool(value)
 
-
-class UUIDField(StrField):
-    pass
 
 class IntField(Field):
 
@@ -58,10 +58,30 @@ class IntField(Field):
         return int(value)
 
 
-class ConstField(Field):
+class StrField(Field):
+
+    def denormalize_value(self, value):
+        if value is None:
+            return None
+        return str(value)
+
+
+class ConstField(BaseField):
 
     def __init__(self, value):
-        super().__init__(getter=lambda obj, name: value)
+        self.value = value
+
+    def dump(self, obj, target):
+        target[self.name] = self.value
+
+    def contribute_to_mapper(self, mapper, name):
+        clone = deepcopy(self)
+        clone.name = name
+        mapper.fields.append(clone)
+
+
+class UUIDField(StrField):
+    pass
 
 
 class DateTimeField(Field):
@@ -72,27 +92,60 @@ class DateTimeField(Field):
         return value.isoformat()
 
 
+class MapperMethodField(BaseField):
+
+    def __init__(self, method_name=None, condition=no_condition):
+        self.name = None
+        self.method_name = method_name
+        self.condition = condition
+        self.mapper = None
+
+    def bind(self, mapper):
+        clone = copy(self)
+        clone.mapper = mapper
+        return clone
+
+    def dump(self, obj, target):
+        method = getattr(self.mapper, self.method_name)
+        value = method(obj)
+        if self.condition(value):
+            target[self.name] = value
+
+    def contribute_to_mapper(self, mapper, name):
+        clone = deepcopy(self)
+        clone.mapper = mapper
+        clone.name = name
+        clone.method_name = self.method_name or 'get_' + name
+        mapper.fields.append(clone)
+
+
 class ListField(Field):
 
-    def __init__(self, mapper, **kwargs):
+    def __init__(self, mapper=None, **kwargs):
         super().__init__(**kwargs)
         self.mapper_class = mapper
         self.mapper = None
         self.kwargs = kwargs
 
-    def bind(self, fields):
+    def bind(self, mapper):
         clone = copy(self)
-        clone.mapper = clone.mapper_class(fields)
+        clone.mapper = clone.mapper_class(mapper.include_fields[self.name])
         return clone
 
     def denormalize_value(self, value):
         if value is None:
             return None
         mapper = self.mapper
-        return [
-            mapper.dump(x)
-            for x in value
-        ]
+        if isinstance(mapper, BaseField):
+            return [
+                mapper.denormalize_value(x)
+                for x in value
+            ]
+        else:
+            return [
+                mapper.dump(x)
+                for x in value
+            ]
 
 
 class MapperField(Field):
@@ -102,9 +155,9 @@ class MapperField(Field):
         self.mapper_class = mapper
         self.mapper = None
 
-    def bind(self, fields):
+    def bind(self, mapper):
         clone = copy(self)
-        clone.mapper = clone.mapper_class(fields)
+        clone.mapper = clone.mapper_class(mapper.include_fields[self.name])
         return clone
 
     def denormalize_value(self, value):
