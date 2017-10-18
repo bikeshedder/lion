@@ -5,4 +5,5 @@ __pycache__
 /.tox
 /build
 /dist
+/Pipfile.lock
 /*.egg-info
