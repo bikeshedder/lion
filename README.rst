@@ -37,9 +37,7 @@ Example::
     # Dump a subset of fields
     assert UserMapper('{id,email}').dump(user) == {
         'id': 'ad94d0e8-2526-4d9b-ad76-0fbffcf41033',
-        'email': 'john.doe@example.com',
-        'first_name': 'John',
-        'last_name': 'Doe'
+        'email': 'john.doe@example.com'
     }
 
 The query language also supports subfields::
