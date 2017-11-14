@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+
 pyparsing = "*"
 pytz = "*"
 
@@ -11,3 +12,4 @@ pytz = "*"
 python_version = "3.6"
 
 [dev-packages]
+tox = "*"

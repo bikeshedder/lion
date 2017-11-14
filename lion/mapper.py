@@ -49,3 +49,16 @@ class Mapper(object, metaclass=MapperMetaclass):
         '''
         from lion.contrib.drf import DRFMapper
         return DRFMapper.wrap(self)
+
+
+class LazyMapper:
+
+    def __init__(self, mapper_class, fields):
+        self.mapper_class = mapper_class
+        self.fields = fields
+        self.mapper = None
+
+    def dump(self, *args, **kwargs):
+        if self.mapper is None:
+            self.mapper = self.mapper_class(self.fields)
+        return self.mapper.dump(*args, **kwargs)

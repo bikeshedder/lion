@@ -1,6 +1,7 @@
 from copy import copy, deepcopy
 
 from .conditions import no_condition
+from .mapper import LazyMapper
 
 
 class BaseField(object):
@@ -40,6 +41,7 @@ class Field(BaseField):
         clone.name = name
         clone.source = clone.source or name
         mapper.fields.append(clone)
+        return clone
 
 
 class BoolField(Field):
@@ -86,6 +88,7 @@ class ConstField(BaseField):
         clone = deepcopy(self)
         clone.name = name
         mapper.fields.append(clone)
+        return clone
 
 
 class UUIDField(StrField):
@@ -134,20 +137,42 @@ class MapperMethodField(BaseField):
         clone.name = name
         clone.method_name = self.method_name or 'get_' + name
         mapper.fields.append(clone)
+        return clone
 
 
-class ListField(Field):
+class MapperField(Field):
 
-    def __init__(self, mapper=None, **kwargs):
+    def __init__(self, mapper, **kwargs):
         super().__init__(**kwargs)
         self.mapper_class = mapper
         self.mapper = None
-        self.kwargs = kwargs
+        self.lazy = False
 
     def bind(self, mapper):
         clone = copy(self)
-        clone.mapper = clone.mapper_class(mapper.include_fields[self.name])
+        if self.lazy:
+            # FIXME This should not be needed:
+            # If fields is the `every_dict` there is no need to bind the
+            # mapper and otherwise cycles are impossible.
+            clone.mapper = LazyMapper(clone.mapper_class, mapper.include_fields[self.name])
+        else:
+            clone.mapper = clone.mapper_class(mapper.include_fields[self.name])
         return clone
+
+    def denormalize_value(self, value):
+         if value is None:
+             return None
+         return self.mapper.dump(value)
+
+    def contribute_to_mapper(self, mapper, name):
+        clone = super().contribute_to_mapper(mapper, name)
+        if clone.mapper_class == 'self':
+            clone.mapper_class = mapper
+            clone.lazy = True
+        return clone
+
+
+class ListField(MapperField):
 
     def denormalize_value(self, value):
         if value is None:
@@ -163,21 +188,3 @@ class ListField(Field):
                 mapper.dump(x)
                 for x in value
             ]
-
-
-class MapperField(Field):
-
-    def __init__(self, mapper, **kwargs):
-        super().__init__(**kwargs)
-        self.mapper_class = mapper
-        self.mapper = None
-
-    def bind(self, mapper):
-        clone = copy(self)
-        clone.mapper = clone.mapper_class(mapper.include_fields[self.name])
-        return clone
-
-    def denormalize_value(self, value):
-         if value is None:
-             return None
-         return self.mapper.dump(value)
