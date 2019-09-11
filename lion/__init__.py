@@ -7,4 +7,4 @@ from .conditions import no_condition, skip_none, skip_empty, skip_false
 from . import getters
 from .ql import parse as parse_ql
 
-__version__ = '0.1.1'
+__version__ = '0.2.0'
