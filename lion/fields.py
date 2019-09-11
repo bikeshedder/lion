@@ -29,7 +29,7 @@ class Field(BaseField):
 
     def dump(self, obj, target):
         value = self.getter(obj, self.source)
-        if self.condition(value):
+        if self.condition(obj, value):
             value = self.denormalize_value(value)
             target[self.name] = value
 
@@ -128,7 +128,7 @@ class MapperMethodField(BaseField):
     def dump(self, obj, target):
         method = getattr(self.mapper, self.method_name)
         value = method(obj)
-        if self.condition(value):
+        if self.condition(obj, value):
             target[self.name] = value
 
     def contribute_to_mapper(self, mapper, name):

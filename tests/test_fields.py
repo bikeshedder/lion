@@ -13,7 +13,7 @@ def test_bool_field():
         v = lion.BoolField()
         v_skip_none = lion.BoolField(condition=lion.skip_none)
         v_skip_false = lion.BoolField(condition=lion.skip_false)
-        v_skip_true = lion.BoolField(condition=lambda v: v is not None and not v)
+        v_skip_true = lion.BoolField(condition=lambda o, v: v is not None and not v)
         v_boolify_true = lion.BoolField()
         v_boolify_false = lion.BoolField()
     data = {
@@ -37,7 +37,7 @@ def test_int_field():
         v = lion.IntField()
         v_skip_none = lion.IntField(condition=lion.skip_none)
         v_skip_false = lion.IntField(condition=lion.skip_false)
-        v_skip_negative = lion.IntField(condition=lambda v: v is not None and v >= 0)
+        v_skip_negative = lion.IntField(condition=lambda o, v: v is not None and v >= 0)
         v_intify = lion.IntField()
     data = {
         'v': 42,
@@ -58,7 +58,7 @@ def test_float_field():
         v = lion.FloatField()
         v_skip_none = lion.FloatField(condition=lion.skip_none)
         v_skip_false = lion.FloatField(condition=lion.skip_false)
-        v_skip_negative = lion.FloatField(condition=lambda v: v is not None and v >= 0)
+        v_skip_negative = lion.FloatField(condition=lambda o, v: v is not None and v >= 0)
         v_intify = lion.FloatField()
     data = {
         'v': 4.2,
