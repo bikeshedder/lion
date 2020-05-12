@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 0.4.0
+
+- Add basic support for dumping (unmarshalling/deserializing)
+
 ## Version 0.3.0
 
 - Change `update_object` to return the updated fields
