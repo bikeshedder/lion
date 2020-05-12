@@ -42,6 +42,16 @@ class Mapper(object, metaclass=MapperMetaclass):
             field.dump(obj, target)
         return target
 
+    def load(self, data, target=None):
+        if target is None:
+            target = self.factory()
+        for field in self.fields:
+            field.load(data, target)
+        return target
+
+    def factory(self):
+        raise NotImplementedError('In order to use the `load` function you need to provide a `factory` function.')
+
     def drf(self):
         '''
         Return a mapper that is compatible to the Django REST Framework
@@ -62,3 +72,8 @@ class LazyMapper:
         if self.mapper is None:
             self.mapper = self.mapper_class(self.fields)
         return self.mapper.dump(*args, **kwargs)
+
+    def load(self, *args, **kwargs):
+        if self.mapper is None:
+            self.mapper = self.mapper_class(self.fields)
+        return self.mapper.load(*args, **kwargs)

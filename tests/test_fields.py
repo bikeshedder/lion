@@ -5,11 +5,12 @@ import pytz
 
 import lion
 
-from .utils import objectify
+from .utils import objectify, Obj
 
 
 def test_bool_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         v = lion.BoolField()
         v_skip_none = lion.BoolField(condition=lion.skip_none)
         v_skip_false = lion.BoolField(condition=lion.skip_false)
@@ -30,10 +31,12 @@ def test_bool_field():
         'v_boolify_true': True,
         'v_boolify_false': False,
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_int_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         v = lion.IntField()
         v_skip_none = lion.IntField(condition=lion.skip_none)
         v_skip_false = lion.IntField(condition=lion.skip_false)
@@ -51,10 +54,12 @@ def test_int_field():
         'v': 42,
         'v_intify': 42,
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_float_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         v = lion.FloatField()
         v_skip_none = lion.FloatField(condition=lion.skip_none)
         v_skip_false = lion.FloatField(condition=lion.skip_false)
@@ -72,10 +77,12 @@ def test_float_field():
         'v': 4.2,
         'v_intify': 4.2,
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_str_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         s = lion.StrField()
         s_none = lion.StrField()
         s_skip_none = lion.StrField(condition=lion.skip_none)
@@ -94,10 +101,12 @@ def test_str_field():
         's_none': None,
         'stringify': '42',
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_const_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         a = lion.ConstField('hello world')
         b = lion.ConstField(42)
     data = { 'a': 'something else', 'b': 43 }
@@ -110,6 +119,7 @@ def test_const_field():
 
 def test_uuid_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         id = lion.UUIDField()
         id_skip_none = lion.UUIDField(condition=lion.skip_none)
     data = {
@@ -117,13 +127,16 @@ def test_uuid_field():
         'id_skip_none': None
     }
     obj = objectify(data)
-    assert MyMapper().dump(obj) == {
+    dumped_data = MyMapper().dump(obj)
+    assert dumped_data == {
         'id': '23101702-056b-40a3-aec2-8c10942c176d'
     }
+    assert MyMapper().load(dumped_data) == obj
 
 
 def test_datetime_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         dt_naive = lion.DateTimeField()
         dt_berlin = lion.DateTimeField()
         dt_naive_to_utc = lion.DateTimeField(tz=pytz.utc)
@@ -139,17 +152,20 @@ def test_datetime_field():
         'dt_skip_none': None,
     }
     obj = objectify(data)
-    assert MyMapper().dump(obj) == {
+    dumped_data = MyMapper().dump(obj)
+    assert dumped_data == {
         'dt_naive': '2017-10-17T15:45:03+00:00',
         'dt_berlin': '2017-10-17T15:45:03+02:00',
         'dt_naive_to_utc': '2017-10-17T15:45:03+00:00',
         'dt_berlin_to_utc': '2017-10-17T13:45:03+00:00',
         'dt_utc_to_berlin': '2017-10-17T17:45:03+02:00',
     }
+    assert MyMapper().load(dumped_data) == obj
 
 
 def test_mapper_method_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         squared = lion.MapperMethodField()
         def get_squared(self, obj):
             return obj.x ** 2
@@ -160,22 +176,27 @@ def test_mapper_method_field():
     assert MyMapper().dump(obj) == {
         'squared': 64
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_list_field():
     class MyMapper(lion.Mapper):
+        factory = Obj
         l = lion.ListField(lion.IntField)
     data = {'l': [42, 43, 44]}
     obj = objectify(data)
     assert MyMapper().dump(obj) == {
         'l': [42, 43, 44]
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_list_mapper_field():
     class SthMapper(lion.Mapper):
+        factory = Obj
         title = lion.StrField()
     class MyMapper(lion.Mapper):
+        factory = Obj
         l = lion.ListField(SthMapper)
         l_empty = lion.ListField(SthMapper)
         l_skip_none = lion.ListField(SthMapper, condition=lion.skip_none)
@@ -197,14 +218,17 @@ def test_list_mapper_field():
         ],
         'l_empty': [],
     }
+    assert MyMapper().load(data) == obj
 
 
 def test_mapper_field():
     class SthMapper(lion.Mapper):
+        factory = Obj
         title = lion.StrField()
     class MyMapper(lion.Mapper):
+        factory = Obj
         sth = lion.MapperField(SthMapper)
     data = {'sth': {'title': 'foo'}}
     obj = objectify(data)
     assert MyMapper().dump(obj) == data
-
+    assert MyMapper().load(data) == obj

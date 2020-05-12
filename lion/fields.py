@@ -1,4 +1,6 @@
 from copy import copy, deepcopy
+from dateutil.parser import isoparse
+from uuid import UUID
 
 from .conditions import no_condition
 from .mapper import LazyMapper
@@ -7,6 +9,9 @@ from .mapper import LazyMapper
 class BaseField(object):
 
     def dump(self, obj, target):
+        raise NotImplemented("Subclasses of BaseField need to implement this method.")
+
+    def load(self, data, target):
         raise NotImplemented("Subclasses of BaseField need to implement this method.")
 
     def bind(self, mapper):
@@ -36,6 +41,20 @@ class Field(BaseField):
     def denormalize_value(self, value):
         return value
 
+    def setter(self, obj, name, value):
+        return setattr(obj, name, value)
+
+    def load(self, data, target):
+        try:
+            value = data[self.name]
+        except KeyError:
+            return
+        value = self.normalize_value(value)
+        self.setter(target, self.source, value)
+
+    def normalize_value(self, value):
+        return value
+
     def contribute_to_mapper(self, mapper, name):
         clone = deepcopy(self)
         clone.name = name
@@ -51,10 +70,20 @@ class BoolField(Field):
             return None
         return bool(value)
 
+    def normalize_value(self, value):
+        if value is None:
+            return None
+        return bool(value)
+
 
 class IntField(Field):
 
     def denormalize_value(self, value):
+        if value is None:
+            return None
+        return int(value)
+
+    def normalize_value(self, value):
         if value is None:
             return None
         return int(value)
@@ -67,10 +96,20 @@ class FloatField(Field):
             return None
         return float(value)
 
+    def normalize_value(self, value):
+        if value is None:
+            return None
+        return float(value)
+
 
 class StrField(Field):
 
     def denormalize_value(self, value):
+        if value is None:
+            return None
+        return str(value)
+
+    def normalize_value(self, value):
         if value is None:
             return None
         return str(value)
@@ -84,6 +123,9 @@ class ConstField(BaseField):
     def dump(self, obj, target):
         target[self.name] = self.value
 
+    def load(self, data, target):
+        return
+
     def contribute_to_mapper(self, mapper, name):
         clone = deepcopy(self)
         clone.name = name
@@ -92,7 +134,9 @@ class ConstField(BaseField):
 
 
 class UUIDField(StrField):
-    pass
+
+    def normalize_value(self, value):
+        return UUID(value)
 
 
 class DateTimeField(Field):
@@ -111,12 +155,18 @@ class DateTimeField(Field):
                 value = self.tz.localize(value)
         return value.isoformat()
 
+    def normalize_value(self, value):
+        return isoparse(value)
+
 
 class MapperMethodField(BaseField):
 
-    def __init__(self, method_name=None, condition=no_condition):
+    def __init__(self, getter_name=None, setter_name=None, condition=no_condition):
         self.name = None
-        self.method_name = method_name
+        self.setter_name = setter_name
+        self.setter = None
+        self.getter_name = getter_name
+        self.getter = None
         self.condition = condition
         self.mapper = None
 
@@ -126,16 +176,26 @@ class MapperMethodField(BaseField):
         return clone
 
     def dump(self, obj, target):
-        method = getattr(self.mapper, self.method_name)
-        value = method(obj)
+        getter = getattr(self.mapper, self.getter_name)
+        value = getter(obj)
         if self.condition(obj, value):
             target[self.name] = value
+
+    def load(self, data, target):
+        if not self.setter_name:
+            return
+        setter = getattr(self.mapper, self.setter_name)
+        value = data[self.name]
+        self.setter(target, value)
 
     def contribute_to_mapper(self, mapper, name):
         clone = deepcopy(self)
         clone.mapper = mapper
         clone.name = name
-        clone.method_name = self.method_name or 'get_' + name
+        clone.getter_name = clone.getter_name or 'get_' + name
+        clone.getter = getattr(mapper, clone.getter_name)
+        if not clone.setter_name and hasattr(clone, 'set_' + name):
+            clone.setter_name = 'set_' + name
         mapper.fields.append(clone)
         return clone
 
@@ -164,6 +224,11 @@ class MapperField(Field):
              return None
          return self.mapper.dump(value)
 
+    def normalize_value(self, value):
+        if value is None:
+            return None
+        return self.mapper.load(value)
+
     def contribute_to_mapper(self, mapper, name):
         clone = super().contribute_to_mapper(mapper, name)
         if clone.mapper_class == 'self':
@@ -186,5 +251,20 @@ class ListField(MapperField):
         else:
             return [
                 mapper.dump(x)
+                for x in value
+            ]
+
+    def normalize_value(self, value):
+        if value is None:
+            return None
+        mapper = self.mapper
+        if isinstance(mapper, BaseField):
+            return [
+                mapper.normalize_value(x)
+                for x in value
+            ]
+        else:
+            return [
+                mapper.load(x)
                 for x in value
             ]

@@ -3,20 +3,24 @@ from uuid import UUID
 import lion
 
 
-class Logo:
-    def __init__(self, url, width, height):
+class BaseObj:
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+class Logo(BaseObj):
+    def __init__(self, url=None, width=None, height=None):
         self.url = url
         self.width = width
         self.height = height
 
-class Project:
-    def __init__(self, id, title, logo):
+class Project(BaseObj):
+    def __init__(self, id=None, title=None, logo=None):
         self.id = id
         self.title = title
         self.logo = logo
 
-class Company:
-    def __init__(self, id, title, logo, projects=None):
+class Company(BaseObj):
+    def __init__(self, id=None, title=None, logo=None, projects=None):
         self.id = id
         self.title = title
         self.logo = logo
@@ -24,32 +28,37 @@ class Company:
 
 
 class LogoMapper(lion.Mapper):
+    factory = Logo
     url = lion.StrField()
     width = lion.IntField()
     height = lion.IntField()
 
 class CompanyMapper(lion.Mapper):
+    factory = Company
     id = lion.UUIDField()
     title = lion.StrField()
     logo = lion.MapperField(LogoMapper, condition=lion.skip_none)
 
 class ProjectMapper(lion.Mapper):
+    factory = Project
     id = lion.UUIDField()
     title = lion.StrField()
     logo = lion.MapperField(LogoMapper, condition=lion.skip_none)
 
 class CompanyWithProjectsMapper(CompanyMapper, lion.Mapper):
+    factory = Company
     projects = lion.ListField(ProjectMapper)
 
 
-class Node:
-    def __init__(self, id, title, parent=None, children=None):
+class Node(BaseObj):
+    def __init__(self, id=None, title=None, parent=None, children=None):
         self.id = id
         self.title = title
         self.parent = parent
         self.children = children or []
 
 class NodeMapper(lion.Mapper):
+    factory = Node
     id = lion.UUIDField()
     title = lion.StrField()
     parent = lion.MapperField('self', condition=lion.skip_none)
@@ -117,7 +126,8 @@ def test_company():
     }
 
 def test_company_with_projects():
-    assert CompanyWithProjectsMapper().dump(company) == {
+    data = CompanyWithProjectsMapper().dump(company)
+    assert data == {
         'id': 'cffa6bba-d6f9-45cb-ae20-12f31fdf2585',
         'title': 'Terreon GmbH',
         'logo': {
@@ -141,9 +151,11 @@ def test_company_with_projects():
             }
         ]
     }
+    assert CompanyWithProjectsMapper().load(data) == company
 
 def test_node():
-    assert NodeMapper().dump(node) == {
+    data = NodeMapper().dump(node)
+    assert data == {
         'id': '778fc992-76b9-47d0-88a2-16392741b6fc',
         'title': 'parent',
         'parent': {
@@ -161,6 +173,7 @@ def test_node():
             },
         ]
     }
+    assert NodeMapper().load(data) == node
 
 def test_fields():
     fields = '{id,title}'
