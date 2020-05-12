@@ -93,9 +93,9 @@ assert UserMapper('{id,email,groups{id}}').dump(user) == {
 
 The performance is somewhat slower than [serpy][serpy] but still far ahead of [marshmallow][marshmallow] and [Django REST Framework][drf].
 
-![Simple Benchmark](docs/benchmark-chart-simple.svg)
+![Simple Benchmark](https://raw.githubusercontent.com/bikeshedder/lion/master/docs/benchmark-chart-simple.svg)
 
-![Complex Benchmark](docs/benchmark-chart-complex.svg)
+![Complex Benchmark](https://raw.githubusercontent.com/bikeshedder/lion/master/docs/benchmark-chart-complex.svg)
 
 ## Caveats
 

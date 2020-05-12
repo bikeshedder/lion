@@ -5,6 +5,8 @@ authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 license = "BSD-2-Clause"
 readme = "README.md"
 description = "Fast and flexible object mapping (serialization, marshalling)"
+repository = "https://github.com/bikeshedder/lion"
+homepage = "https://github.com/bikeshedder/lion"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
