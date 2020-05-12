@@ -6,7 +6,7 @@ django.setup()
 
 from rest_framework import serializers as rf_serializers
 from utils import write_csv
-import marshmallow
+import rest_marshmallow as marshmallow
 import serpy
 import lion
 
@@ -102,4 +102,4 @@ if __name__ == '__main__':
             'z': 10 * i
         } for i in range(10)]
     }
-    write_csv(__file__, data, ComplexRF, ComplexM().dump, ComplexS, ComplexL().drf(), 1)
+    write_csv(__file__, data, ComplexRF, ComplexM, ComplexS, ComplexL().drf(), 1)

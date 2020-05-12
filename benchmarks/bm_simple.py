@@ -6,7 +6,7 @@ django.setup()
 
 from rest_framework import serializers as rf_serializers
 from utils import write_csv
-import marshmallow
+import rest_marshmallow as marshmallow
 import serpy
 import lion
 
@@ -29,4 +29,4 @@ class SimpleL(lion.Mapper):
 
 if __name__ == '__main__':
     data = {'foo': 'bar'}
-    write_csv(__file__, data, SimpleRF, SimpleM().dump, SimpleS, SimpleL().drf(), 100)
+    write_csv(__file__, data, SimpleRF, SimpleM, SimpleS, SimpleL().drf(), 100)

@@ -1,4 +1,5 @@
 from rest_framework import serializers as rf_serializers
+import rest_marshmallow
 import serpy
 import lion
 import time
@@ -28,7 +29,7 @@ def write_csv(name, data, drf, marshmallow, serpy, lion, size):
 
 def benchmark(serializer_fn, repetitions, num_objs=1, data=None):
     total_objs = repetitions * num_objs
-    if not isinstance(serializer_fn, type):
+    if issubclass(serializer_fn, rest_marshmallow.Schema):
         library = 'Marshmallow'
     elif issubclass(serializer_fn, serpy.Serializer):
         library = 'serpy'
