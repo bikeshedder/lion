@@ -44,13 +44,13 @@ class Mapper(object, metaclass=MapperMetaclass):
 
     def load(self, data, target=None):
         if target is None:
-            target = self.factory()
+            target = self._factory()
         for field in self.fields:
             field.load(data, target)
         return target
 
-    def factory(self):
-        raise NotImplementedError('In order to use the `load` function you need to provide a `factory` function.')
+    def _factory(self):
+        raise NotImplementedError('In order to use the `load` function you need to provide a `_factory` function.')
 
     def drf(self):
         '''

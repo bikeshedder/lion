@@ -28,25 +28,25 @@ class Company(BaseObj):
 
 
 class LogoMapper(lion.Mapper):
-    factory = Logo
+    _factory = Logo
     url = lion.StrField()
     width = lion.IntField()
     height = lion.IntField()
 
 class CompanyMapper(lion.Mapper):
-    factory = Company
+    _factory = Company
     id = lion.UUIDField()
     title = lion.StrField()
     logo = lion.MapperField(LogoMapper, condition=lion.skip_none)
 
 class ProjectMapper(lion.Mapper):
-    factory = Project
+    _factory = Project
     id = lion.UUIDField()
     title = lion.StrField()
     logo = lion.MapperField(LogoMapper, condition=lion.skip_none)
 
 class CompanyWithProjectsMapper(CompanyMapper, lion.Mapper):
-    factory = Company
+    _factory = Company
     projects = lion.ListField(ProjectMapper)
 
 
@@ -58,7 +58,7 @@ class Node(BaseObj):
         self.children = children or []
 
 class NodeMapper(lion.Mapper):
-    factory = Node
+    _factory = Node
     id = lion.UUIDField()
     title = lion.StrField()
     parent = lion.MapperField('self', condition=lion.skip_none)
