@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Version 0.4.1
+
+- Fix package metadata and images in README
+
 ## Version 0.4.0
 
 - Add basic support for dumping (unmarshalling/deserializing)

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lion"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Michael P. Jung <michael.jung@terreon.de>"]
 license = "BSD-2-Clause"
 readme = "README.md"
