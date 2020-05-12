@@ -1,13 +1,10 @@
 __pycache__
 *.swp
+.venv
 
-/.cache
-/.eggs
 /.pytest_cache
 /.tox
-/.venv
 /.vscode
 /build
 /dist
-/Pipfile.lock
 /*.egg-info
