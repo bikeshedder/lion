@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Version 0.5.0 - unreleased
+## Version 0.5.0 - 2024-02-02
 
 - Relax version dependency of `pytz`
 - Update dependencies
