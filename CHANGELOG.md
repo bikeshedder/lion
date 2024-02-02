@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Version 0.5.0 - unreleased
+
+- Relax version dependency of `pytz`
+- Update dependencies
+
 ## Version 0.4.1
 
 - Fix package metadata and images in README

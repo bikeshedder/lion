@@ -7,13 +7,14 @@ license = "BSD-2-Clause"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.5"
-marshmallow = "^3.6.0"
+python = "^3.10"
+marshmallow = "^3.20.2"
 serpy = "^0.3.1"
-django-rest-framework = "^0.1.0"
-pyparsing = "^2.4.7"
+djangorestframework = "^3.14.0"
 django-rest-marshmallow = "^4.0.2"
 python-dateutil = "^2.8.1"
+lion = { path = "../" }
+matplotlib = "^3.8.2"
 
 [tool.poetry.dev-dependencies]
 
